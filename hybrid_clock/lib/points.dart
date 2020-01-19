@@ -82,25 +82,20 @@ class Markers extends StatefulWidget {
 }
 
 class _MarkersState extends State<Markers> {
-  MarkersPainter painter = MarkersPainter();
+  MarkersPainter painter;
 
   @override
   Widget build(BuildContext context) {
     //Have a different colour top and bottom
-    return ShaderMask(
-      blendMode: BlendMode.srcIn,
-      shaderCallback: (Rect bounds) => LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          ClockTheme.of(context).markerDark,
-          ClockTheme.of(context).markerLight,
-        ],
-        stops: [0.5, 0.5],
-      ).createShader(bounds),
-      child: CustomPaint(
-        painter: painter,
-      ),
+    //Initially used ShaderMask, however this seems
+    //to be broken on the stable channel (it works
+    //as expected on the beta channel)
+    painter ??= MarkersPainter(
+      ClockTheme.of(context).markerDark,
+      ClockTheme.of(context).markerLight,
+    );
+    return CustomPaint(
+      painter: painter,
     );
   }
 }
@@ -111,6 +106,10 @@ class MarkersPainter extends CustomPainter {
   Paint paintData = Paint();
   List<Offset> p1s;
   List<Offset> p2s;
+  final Color firstColor;
+  final Color lastColor;
+
+  MarkersPainter(this.firstColor, this.lastColor);
 
   void calculatePoints(Size size) {
     p1s = [];
@@ -142,7 +141,12 @@ class MarkersPainter extends CustomPainter {
     }
     canvas.translate(size.width * 0.5, size.height * 0.5);
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 4; i++) {
+      paintData.color = lastColor;
+      canvas.drawLine(p1s[i], p2s[i], paintData);
+    }
+    for (int i = 4; i < 8; i++) {
+      paintData.color = firstColor;
       canvas.drawLine(p1s[i], p2s[i], paintData);
     }
   }
